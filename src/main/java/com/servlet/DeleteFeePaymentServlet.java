@@ -1,34 +1,85 @@
- package com.servlet;
+  package com.servlet;
 
 import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
+
+import java.util.*;
+
 import com.dao.FeePaymentDAO;
+import com.model.FeePayment;
 
 public class DeleteFeePaymentServlet extends HttpServlet {
 
-    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+    protected void doGet(HttpServletRequest req,
+                         HttpServletResponse res)
             throws ServletException, IOException {
 
-        try {
+        try{
 
-            int id = Integer.parseInt(req.getParameter("paymentID"));
+            int displayID =
+                Integer.parseInt(
+                    req.getParameter("paymentID")
+                );
 
-            if (id <= 0) {
-                res.getWriter().println("Invalid Payment ID");
+            FeePaymentDAO dao =
+                new FeePaymentDAO();
+
+            List<FeePayment> list =
+                dao.getAllPayments();
+
+            int count = 1;
+
+            int realPaymentID = 0;
+
+            for(FeePayment f : list){
+
+                if(f.getStudentName() != null &&
+                   f.getStatus() != null &&
+                   f.getAmount() > 0){
+
+                    if(count == displayID){
+
+                        realPaymentID =
+                            f.getPaymentID();
+
+                        break;
+                    }
+
+                    count++;
+                }
+            }
+
+            // ✅ NO RECORD FOUND
+            if(realPaymentID == 0){
+
+                req.getSession().setAttribute(
+                    "msg",
+                    "No Record Found"
+                );
+
+                res.sendRedirect(
+                    "DisplayFeePaymentsServlet"
+                );
+
                 return;
             }
 
-            FeePaymentDAO dao = new FeePaymentDAO();
-            dao.deletePayment(id);
+            // ✅ DELETE RECORD
+            dao.deletePayment(realPaymentID);
 
-            // MESSAGE
-            req.getSession().setAttribute("msg", "Deleted Successfully");
+            req.getSession().setAttribute(
+                "msg",
+                "Deleted Successfully"
+            );
 
-            res.sendRedirect("index.jsp");
+            res.sendRedirect(
+                "DisplayFeePaymentsServlet"
+            );
 
-        } catch (Exception e) {
+        }catch(Exception e){
             e.printStackTrace();
         }
     }
+
 }
